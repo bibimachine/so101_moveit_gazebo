@@ -8,6 +8,9 @@
         <xacro:if value="${ros2_control_hardware_type == 'mock_components'}">
           <plugin>mock_components/GenericSystem</plugin>
         </xacro:if>
+        <xacro:if value="${ros2_control_hardware_type == 'gazebo'}">
+          <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </xacro:if>
       </hardware>
       <joint name="shoulder_pan">
         <command_interface name="position"/>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="so101">
+
+  <!-- Gazebo 版顶层描述：硬件层用 gazebo_ros2_control，并挂载 Gazebo 插件。
+       so101_gazebo.urdf 由本文件生成（剥离 XML 注释），Gazebo 固定加载该静态文件。
+       注：注释中不要使用英文冒号，会触发 rcl 参数解析 bug -->
+  <xacro:arg name="ros2_control_hardware_type" default="gazebo"/>
+
+  <!-- Import descriptions -->
+  <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101_description.xacro"/>
+  <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101.ros2_control.xacro"/>
+  <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101_hand.ros2_control.xacro"/>
+
+  <!-- 机器人本体（公共描述） -->
+  <xacro:so101_description/>
+
+  <!-- ros2_control arm (5 joints) + hand (gripper) -->
+  <xacro:so101_ros2_control name="SO101GazeboSystem" ros2_control_hardware_type="$(arg ros2_control_hardware_type)"/>
+  <xacro:so101_hand_ros2_control name="SO101HandGazeboSystem" ros2_control_hardware_type="$(arg ros2_control_hardware_type)"/>
+
+  <!-- Gazebo Classic ros2_control 插件（内部运行 controller_manager） -->
+  <gazebo>
+    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+      <parameters>$(find so101_moveit_gazebo)/config/so101_ros2_control.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>
