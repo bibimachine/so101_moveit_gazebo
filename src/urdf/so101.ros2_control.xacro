@@ -13,13 +13,7 @@
         </xacro:if>
       </hardware>
       <joint name="shoulder_pan">
-        <command_interface name="position">
-          <!-- gazebo_ros2_control 的默认 PID 增益太弱，扛不住重力，机械臂会持续下沉漂移；
-               这里给位置接口显式指定增益（mock_components 会忽略这些参数） -->
-          <param name="p">25</param>
-          <param name="i">0.5</param>
-          <param name="d">5</param>
-        </command_interface>
+        <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
@@ -28,13 +22,7 @@
         </state_interface>
       </joint>
       <joint name="shoulder_lift">
-        <command_interface name="position">
-          <!-- gazebo_ros2_control 的默认 PID 增益太弱，扛不住重力，机械臂会持续下沉漂移；
-               这里给位置接口显式指定增益（mock_components 会忽略这些参数） -->
-          <param name="p">25</param>
-          <param name="i">0.5</param>
-          <param name="d">5</param>
-        </command_interface>
+        <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
@@ -43,13 +31,7 @@
         </state_interface>
       </joint>
       <joint name="elbow_flex">
-        <command_interface name="position">
-          <!-- gazebo_ros2_control 的默认 PID 增益太弱，扛不住重力，机械臂会持续下沉漂移；
-               这里给位置接口显式指定增益（mock_components 会忽略这些参数） -->
-          <param name="p">25</param>
-          <param name="i">0.5</param>
-          <param name="d">5</param>
-        </command_interface>
+        <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
@@ -58,13 +40,7 @@
         </state_interface>
       </joint>
       <joint name="wrist_flex">
-        <command_interface name="position">
-          <!-- gazebo_ros2_control 的默认 PID 增益太弱，扛不住重力，机械臂会持续下沉漂移；
-               这里给位置接口显式指定增益（mock_components 会忽略这些参数） -->
-          <param name="p">25</param>
-          <param name="i">0.5</param>
-          <param name="d">5</param>
-        </command_interface>
+        <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
@@ -73,13 +49,7 @@
         </state_interface>
       </joint>
       <joint name="wrist_roll">
-        <command_interface name="position">
-          <!-- gazebo_ros2_control 的默认 PID 增益太弱，扛不住重力，机械臂会持续下沉漂移；
-               这里给位置接口显式指定增益（mock_components 会忽略这些参数） -->
-          <param name="p">25</param>
-          <param name="i">0.5</param>
-          <param name="d">5</param>
-        </command_interface>
+        <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
