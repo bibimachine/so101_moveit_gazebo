@@ -2,8 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="so101">
 
   <!-- Gazebo 版顶层描述，由 so101_gazebo.launch.py 经 xacro 命令直接加载。
-       硬件层用 gazebo_ros2_control，并挂载 Gazebo 插件。
-       注意：注释中不要使用英文冒号，会触发 rcl 参数解析 bug -->
+       硬件层用 gazebo_ros2_control，并挂载 Gazebo 插件。 -->
   <xacro:arg name="ros2_control_hardware_type" default="gazebo"/>
 
   <!-- Import descriptions -->
@@ -15,8 +14,7 @@
   <xacro:so101_description/>
 
   <!-- Gazebo 专用：world 虚链接 + fixed 关节，把整机焊死在空中，
-       防止底盘倾倒/滑动，同时消除 KDL 根链接带惯性的警告。
-       注意：注释中不要使用英文冒号，会触发 rcl 参数解析 bug -->
+       防止底盘倾倒/滑动，同时消除 KDL 根链接带惯性的警告。 -->
   <link name="world"/>
   <joint name="world_joint" type="fixed">
     <parent link="world"/>
