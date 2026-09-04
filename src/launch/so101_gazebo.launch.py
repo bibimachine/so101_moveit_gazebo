@@ -5,25 +5,27 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('so101_moveit_gazebo')
-    # Gazebo 固定使用这份静态 URDF（由 so101.urdf.xacro 生成，不含 XML 注释，
-    # 规避 gazebo_ros2_control 转发 robot_description 时的 rcl 参数解析问题）
-    default_model_path = os.path.join(pkg_share, 'urdf', 'so101_gazebo.urdf')
+    # Gazebo 版 xacro（gazebo 硬件 + gazebo_ros2_control 插件块）
+    # 注意：xacro 注释中不要使用英文冒号，会触发 rcl 参数解析 bug
+    default_model_path = os.path.join(pkg_share, 'urdf', 'so101_gazebo.urdf.xacro')
     robot_name_in_model = 'so101'
 
     model_arg = DeclareLaunchArgument(
         name='model',
         default_value=str(default_model_path),
-        description='SO101 静态 URDF 文件的绝对路径')
+        description='SO101 gazebo 版 xacro 文件的绝对路径')
 
-    # 直接读取 URDF 文件内容（不使用 xacro 命令行）
-    with open(default_model_path, 'r') as f:
-        robot_description = f.read()
+    # 运行 xacro 生成 robot_description
+    robot_description = ParameterValue(
+        Command(['xacro ', LaunchConfiguration('model')]),
+        value_type=str)
 
     # 发布 TF
     robot_state_publisher_node = Node(
