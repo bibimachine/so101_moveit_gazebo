@@ -14,6 +14,16 @@
   <!-- 机器人本体（公共描述） -->
   <xacro:so101_description/>
 
+  <!-- Gazebo 专用：world 虚链接 + fixed 关节，把整机焊死在空中，
+       防止底盘倾倒/滑动，同时消除 KDL 根链接带惯性的警告。
+       注意：注释中不要使用英文冒号，会触发 rcl 参数解析 bug -->
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
   <!-- ros2_control arm (5 joints) + hand (gripper) -->
   <xacro:so101_ros2_control name="SO101GazeboSystem" ros2_control_hardware_type="$(arg ros2_control_hardware_type)"/>
   <xacro:so101_hand_ros2_control name="SO101HandGazeboSystem" ros2_control_hardware_type="$(arg ros2_control_hardware_type)"/>

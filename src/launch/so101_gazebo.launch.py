@@ -3,8 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
-                            IncludeLaunchDescription, RegisterEventHandler,
-                            SetEnvironmentVariable)
+                            IncludeLaunchDescription, RegisterEventHandler)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
@@ -15,7 +14,6 @@ from launch.actions import TimerAction
 def generate_launch_description():
     pkg_share = get_package_share_directory('so101_moveit_gazebo')
     # Gazebo 版 xacro（gazebo 硬件 + gazebo_ros2_control 插件块）
-    # 注意：xacro 注释中不要使用英文冒号，会触发 rcl 参数解析 bug
     default_model_path = os.path.join(pkg_share, 'urdf', 'so101_gazebo.urdf.xacro')
     robot_name_in_model = 'so101'
 
@@ -40,10 +38,8 @@ def generate_launch_description():
     )
 
     # 启动 Gazebo Classic（默认空世界）
-    # 先把包的上级 share 目录加进 GAZEBO_MODEL_PATH，
-    # 否则 mesh 的 package:// 路径转成 model:// 后无法解析，机器人在 Gazebo 里隐形
-    set_gazebo_model_path = SetEnvironmentVariable(
-        'GAZEBO_MODEL_PATH', os.path.dirname(pkg_share))
+    # mesh 路径在 xacro 里用 $(find so101_moveit_gazebo) 展开为绝对路径，
+    # 不再依赖 GAZEBO_MODEL_PATH 环境变量
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([get_package_share_directory(
                     'gazebo_ros'), '/launch/gazebo.launch.py']),
@@ -82,7 +78,6 @@ def generate_launch_description():
     return LaunchDescription([
         model_arg,
         robot_state_publisher_node,
-        set_gazebo_model_path,
         gazebo_launch,
         TimerAction(
             period=10.0,

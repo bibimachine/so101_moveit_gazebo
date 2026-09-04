@@ -13,7 +13,12 @@
         </xacro:if>
       </hardware>
       <joint name="gripper">
-        <command_interface name="position"/>
+        <command_interface name="position">
+          <!-- 与手臂关节同理，显式 PID 增益防止重力漂移（mock 下被忽略） -->
+          <param name="p">25</param>
+          <param name="i">0.5</param>
+          <param name="d">5</param>
+        </command_interface>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
         </state_interface>
