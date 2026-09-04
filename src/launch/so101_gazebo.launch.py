@@ -2,7 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
+                            IncludeLaunchDescription, RegisterEventHandler)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
@@ -40,7 +41,7 @@ def generate_launch_description():
     # 启动 Gazebo Classic（默认空世界）
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([get_package_share_directory(
-                    'gazebo_ros'), '/launch', '/gazebo.launch.py']),
+                    'gazebo_ros'), '/launch/gazebo.launch.py']),
     )
 
     # 请求 Gazebo 加载机器人
@@ -53,24 +54,23 @@ def generate_launch_description():
         output='screen'
     )
 
-    # 机器人加载完成后启动控制器（controller_manager 由 gazebo_ros2_control 插件内部运行）
-    joint_state_broadcaster_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['so101_joint_state_broadcaster',
-                   '--controller-manager', '/controller_manager']
+    # 机器人生成成功后，按顺序链式加载并激活控制器
+    # （controller_manager 由 gazebo_ros2_control 插件内部运行，
+    #   load_controller 命令会自行等待 /controller_manager 服务就绪）
+    load_joint_state_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', 'so101_joint_state_broadcaster',
+             '--set-state', 'active'],
+        output='screen'
     )
-    arm_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['so101_arm_controller',
-                   '--controller-manager', '/controller_manager']
+    load_arm_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', 'so101_arm_controller',
+             '--set-state', 'active'],
+        output='screen'
     )
-    gripper_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['so101_gripper_controller',
-                   '--controller-manager', '/controller_manager']
+    load_gripper_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', 'so101_gripper_controller',
+             '--set-state', 'active'],
+        output='screen'
     )
 
     return LaunchDescription([
@@ -78,14 +78,22 @@ def generate_launch_description():
         robot_state_publisher_node,
         gazebo_launch,
         spawn_entity_node,
+        # 事件动作，机器人生成结束后加载 joint_state_broadcaster
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=spawn_entity_node,
-                on_exit=[
-                    joint_state_broadcaster_spawner,
-                    arm_controller_spawner,
-                    gripper_controller_spawner,
-                ],
-            )
+                on_exit=[load_joint_state_controller])
+        ),
+        # joint_state_broadcaster 加载完成后加载手臂控制器
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_state_controller,
+                on_exit=[load_arm_controller])
+        ),
+        # 手臂控制器加载完成后加载夹爪控制器
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_arm_controller,
+                on_exit=[load_gripper_controller])
         ),
     ])
