@@ -79,7 +79,7 @@ def generate_launch_description():
     # 需要 ros-humble-image-view：sudo apt install ros-humble-image-view
     image_view_node = Node(
         package='image_view',
-        executable='image_view_node',
+        executable='image_view',
         remappings=[('image', '/so101_camera/image_raw')]
     )
 
@@ -89,7 +89,7 @@ def generate_launch_description():
         gazebo_launch,
         image_view_node,
         TimerAction(
-            period=10.0,
+            period=5.0,
             actions=[spawn_entity_node]
         ),
         # 事件动作，机器人生成结束后加载 joint_state_broadcaster
