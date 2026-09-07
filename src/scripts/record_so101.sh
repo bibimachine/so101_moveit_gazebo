@@ -2,22 +2,46 @@
 # SO101 Gazebo 数据采集脚本(ros2 bag)
 #
 # 用法:
-#   ./record_so101.sh [bag名前缀]        # 从源码目录直接跑
-#   ros2 run so101_moveit_gazebo record_so101.sh [bag名前缀]   # 安装后跑
+#   ./record_so101.sh [选项] [bag名前缀]
+#   ros2 run so101_moveit_gazebo record_so101.sh [选项] [bag名前缀]
+#
+# 选项:
+#   -o DIR     bag 输出目录          (默认 ~/ros_study/bags)
+#   -s FORMAT  存储格式 mcap|sqlite3  (默认 mcap,缺插件自动回退 sqlite3)
+#   -d SEC     单文件切分时长(秒)    (默认 60,0 表示不切分)
+#   -t TOPICS  录制话题,引号包住      (默认见下方 DEFAULT_TOPICS)
+#   -h         显示本帮助
+#
+# 示例:
+#   ./record_so101.sh -d 120 -o ~/data 抓取实验1
+#   ./record_so101.sh -t "/joint_states /tf" 只录关节
 #
 # 依赖环境:
 #   1. 已启动 so101_gazebo.launch.py(相机/控制器在跑)
 #   2. mcap 格式需要: sudo apt install ros-humble-rosbag2-storage-mcap
-#      没装会自动回退 sqlite3 并提示
 set -e
 
-# ============ 常用选项(按需要改) ============
-BAG_DIR="${BAG_DIR:-$HOME/ros_study/bags}"   # bag 输出目录
-STORAGE="${STORAGE:-mcap}"                   # mcap | sqlite3
-DURATION="${DURATION:-60}"                   # 单个文件最长时长(秒),到点自动切分;0 表示不切
-NAME_PREFIX="${1:-so101}"                    # bag 名前缀,默认 so101_时间戳
-# 录制话题(可用环境变量 TOPICS 整体覆盖: TOPICS="/a /b" ./record_so101.sh)
-TOPICS="${TOPICS:-/so101_camera/image_raw /so101_camera/camera_info /joint_states /tf /tf_static /robot_description /clock /so101_arm_controller/joint_trajectory /so101_gripper_controller/commands}"
+DEFAULT_TOPICS="/so101_camera/image_raw /so101_camera/camera_info /joint_states /tf /tf_static /robot_description /clock /so101_arm_controller/joint_trajectory /so101_gripper_controller/commands"
+
+BAG_DIR="$HOME/ros_study/bags"
+STORAGE="mcap"
+DURATION=60
+TOPICS="$DEFAULT_TOPICS"
+
+usage() { sed -n '2,21p' "$0" | sed 's/^# \?//'; exit "${1:-0}"; }
+
+while getopts "o:s:d:t:h" opt; do
+  case "$opt" in
+    o) BAG_DIR="$OPTARG" ;;
+    s) STORAGE="$OPTARG" ;;
+    d) DURATION="$OPTARG" ;;
+    t) TOPICS="$OPTARG" ;;
+    h) usage 0 ;;
+    *) usage 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+NAME_PREFIX="${1:-so101}"   # bag 名前缀,默认 so101_时间戳
 
 source /opt/ros/humble/setup.bash
 # 兼容"ros2 run"和源码目录两种调用方式
