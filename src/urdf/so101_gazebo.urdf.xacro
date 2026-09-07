@@ -9,6 +9,7 @@
   <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101_description.xacro"/>
   <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101.ros2_control.xacro"/>
   <xacro:include filename="$(find so101_moveit_gazebo)/urdf/so101_hand.ros2_control.xacro"/>
+  <xacro:include filename="$(find so101_moveit_gazebo)/urdf/camera/so101_camera.xacro"/>
 
   <!-- 机器人本体（公共描述） -->
   <xacro:so101_description/>
@@ -34,5 +35,8 @@
       <parameters>$(find so101_moveit_gazebo)/config/so101_ros2_control.yaml</parameters>
     </plugin>
   </gazebo>
+
+  <!-- 固定外置 RGB 相机（eye-to-hand），话题 /so101_camera/image_raw -->
+  <xacro:so101_camera/>
 
 </robot>

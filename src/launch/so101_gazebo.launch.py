@@ -75,10 +75,19 @@ def generate_launch_description():
         output='screen'
     )
 
+    # 相机画面显示（固定外置相机 /so101_camera/image_raw）
+    # 需要 ros-humble-image-view：sudo apt install ros-humble-image-view
+    image_view_node = Node(
+        package='image_view',
+        executable='image_view_node',
+        remappings=[('image', '/so101_camera/image_raw')]
+    )
+
     return LaunchDescription([
         model_arg,
         robot_state_publisher_node,
         gazebo_launch,
+        image_view_node,
         TimerAction(
             period=10.0,
             actions=[spawn_entity_node]

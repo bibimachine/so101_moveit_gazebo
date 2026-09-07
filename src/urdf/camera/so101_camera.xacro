@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- SO101 RGB 相机（eye-to-hand 固定外置）
+       挂在 world 上俯视工作台，话题：/so101_camera/image_raw + /so101_camera/camera_info
+       xyz/rpy 可覆盖，用于调整视角（rpy 中 yaw 1.5708 使 x 轴朝向 +y 即工作台方向，pitch 下俯） -->
+  <xacro:macro name="so101_camera" params="parent:=world xyz:='0 -0.35 0.3' rpy:='0 0.7 1.5708'">
+
+    <!-- 相机本体 link，x 轴朝前（视线方向） -->
+    <link name="so101_camera_link">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0"/>
+        <geometry>
+          <box size="0.02 0.04 0.02"/>
+        </geometry>
+        <material name="so101_camera_dark">
+          <color rgba="0.1 0.1 0.1 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0"/>
+        <geometry>
+          <box size="0.02 0.04 0.02"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- 光轴坐标系：z 前 x 右 y 下（相机光学惯例），图像消息的 header.frame_id 用它 -->
+    <link name="so101_camera_optical_frame"/>
+
+    <joint name="so101_camera_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="so101_camera_link"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <joint name="so101_camera_optical_joint" type="fixed">
+      <parent link="so101_camera_link"/>
+      <child link="so101_camera_optical_frame"/>
+      <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+    </joint>
+
+    <!-- Gazebo 相机插件：发布 image_raw 和 camera_info，TF 由 robot_state_publisher 发布 -->
+    <gazebo reference="so101_camera_link">
+      <sensor type="camera" name="so101_camera">
+        <update_rate>10</update_rate>
+        <camera name="so101_camera">
+          <horizontal_fov>1.047</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>5.0</far>
+          </clip>
+        </camera>
+        <plugin name="so101_camera_controller" filename="libgazebo_ros_camera.so">
+          <camera_name>so101_camera</camera_name>
+          <!-- ROS2 插件参数名是下划线风格，写成 ROS1 风格的驼峰式会被忽略 -->
+          <frame_name>so101_camera_optical_frame</frame_name>
+          <image_topic_name>image_raw</image_topic_name>
+          <camera_info_topic_name>camera_info</camera_info_topic_name>
+        </plugin>
+      </sensor>
+    </gazebo>
+
+  </xacro:macro>
+</robot>
