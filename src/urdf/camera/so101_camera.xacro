@@ -3,8 +3,10 @@
 
   <!-- SO101 RGB 相机（eye-to-hand 固定外置）
        挂在 world 上俯视工作台，话题：/so101_camera/image_raw + /so101_camera/camera_info
-       xyz/rpy 可覆盖，用于调整视角（rpy 中 yaw 1.5708 使 x 轴朝向 +y 即工作台方向，pitch 下俯） -->
-  <xacro:macro name="so101_camera" params="parent:=world xyz:='0 -0.35 0.3' rpy:='0 0.7 1.5708'">
+       xyz/rpy 可覆盖，用于调整视角。
+       rpy 计算：yaw 固定 1.5708（x 轴朝向 +y 工作台方向），pitch ≈ atan2(相机高度-目标高度, 水平距离)，
+       当前默认瞄准工作区中部 (0,0,0.15)：atan2(0.45-0.15, 0.6) ≈ 0.46 -->
+  <xacro:macro name="so101_camera" params="parent:=world xyz:='0 -0.6 0.45' rpy:='0 0.46 1.5708'">
 
     <!-- 相机本体 link，x 轴朝前（视线方向） -->
     <link name="so101_camera_link">
