@@ -36,12 +36,14 @@ def generate_launch_description():
     )
 
     # ros2_control 控制管理器（加载 mock 硬件 + 控制器配置）
+    # robot_description 不传参，通过 remap 订阅 robot_state_publisher 发布的
+    # /robot_description topic 获取（Humble 官方推荐写法，避免 xacro 展开两次）
     controller_manager_node = Node(
         package='controller_manager',
         executable='ros2_control_node',
-        parameters=[
-            {'robot_description': robot_description},
-            default_controllers_path
+        parameters=[default_controllers_path],
+        remappings=[
+            ('/controller_manager/robot_description', '/robot_description'),
         ],
         output='screen'
     )
