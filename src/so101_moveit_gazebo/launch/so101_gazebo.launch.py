@@ -3,13 +3,13 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
-                            IncludeLaunchDescription, RegisterEventHandler)
+                            IncludeLaunchDescription, RegisterEventHandler,
+                            SetEnvironmentVariable, TimerAction)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-from launch.actions import TimerAction
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('so101_moveit_gazebo')
@@ -42,6 +42,9 @@ def generate_launch_description():
     # 需直接 include gzserver/gzclient）
     # mesh 路径在 xacro 里用 $(find so101_moveit_gazebo) 展开为绝对路径，
     # 不再依赖 GAZEBO_MODEL_PATH 环境变量
+    # GAZEBO_MODEL_DATABASE_URI 置空：gzclient 启动时会联网拉取在线模型列表
+    # （models.gazebosim.org），网络不通时 GUI 会卡死/不刷新（见问题排查记录第 8 条）；
+    # 本包模型全部本地，禁掉在线库无副作用
     gazebo_share = get_package_share_directory('gazebo_ros')
     gzserver_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([gazebo_share, '/launch/gzserver.launch.py']),
@@ -52,6 +55,8 @@ def generate_launch_description():
     gzclient_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([gazebo_share, '/launch/gzclient.launch.py'])
     )
+    disable_model_db = SetEnvironmentVariable(
+        'GAZEBO_MODEL_DATABASE_URI', '')
 
     # 请求 Gazebo 加载机器人
     spawn_entity_node = Node(
@@ -102,6 +107,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         model_arg,
+        # 必须在 gzclient 启动前设置（launch 按顺序执行动作）
+        disable_model_db,
         robot_state_publisher_node,
         gzserver_launch,
         gzclient_launch,
