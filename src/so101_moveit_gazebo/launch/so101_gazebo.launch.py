@@ -113,10 +113,11 @@ def generate_launch_description():
         gzserver_launch,
         gzclient_launch,
         image_view_node,
-        # spawn_entity 内部会自己等待 /spawn_entity 服务就绪，无需长延时；
-        # 缩短 spawn 前的等待，减小"机器人在世界里但控制器未激活"的重力下垂窗口
+        # spawn 延时 5s:WSLg 下 gzclient 连接服务器需要数秒,spawn 太早客户端
+        # 没就绪会丢模型视觉(画面里隐形,见问题排查记录#1);太晚则拉长"控制器
+        # 未激活"的重力下垂窗口。5s 两边都照顾到,且 grasp_cube.py 会先回标定位形
         TimerAction(
-            period=2.0,
+            period=5.0,
             actions=[spawn_entity_node]
         ),
         # 方块在机器人之后生成（不与机械臂初始位姿干涉）
