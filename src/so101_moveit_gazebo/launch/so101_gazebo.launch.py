@@ -88,8 +88,10 @@ def generate_launch_description():
         robot_state_publisher_node,
         gazebo_launch,
         image_view_node,
+        # spawn_entity 内部会自己等待 /spawn_entity 服务就绪，无需长延时；
+        # 缩短 spawn 前的等待，减小"机器人在世界里但控制器未激活"的重力下垂窗口
         TimerAction(
-            period=5.0,
+            period=2.0,
             actions=[spawn_entity_node]
         ),
         # 事件动作，机器人生成结束后加载 joint_state_broadcaster
