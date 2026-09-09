@@ -29,7 +29,6 @@ SO101 机械臂 + ROS 2 + Gazebo 的**学习实践项目**。从 URDF 建模起�
 
 - [ ] 接入 MoveIt 2(运动规划、碰撞检测)
 - [ ] 直接操控(遥操作示教,采集 demonstration 数据)
-- [ ] bag → LeRobot 数据集转换脚本
 - [ ] (可选)腕部第二相机、深度相机
 
 ## 快速开始
@@ -50,5 +49,5 @@ ros2 run so101_moveit_gazebo record_so101.sh -h
 
 ## 文档
 
-- [docs/文件说明.md](docs/文件说明.md) — 各文件作用说明
-- [docs/问题排查记录.md](docs/问题排查记录.md) — 全部踩坑记录(Gazebo 隐形、RViz mesh 加载、numpy 冲突等)
+- [src/so101_moveit_gazebo/doc/文件说明.md](src/so101_moveit_gazebo/doc/文件说明.md) — 各文件作用说明
+- [src/so101_moveit_gazebo/doc/问题排查记录.md](src/so101_moveit_gazebo/doc/问题排查记录.md) — 全部踩坑记录(Gazebo 隐形、RViz mesh 加载、numpy 冲突等)
