@@ -37,13 +37,20 @@ def generate_launch_description():
         }]
     )
 
-    # 启动 Gazebo Classic（默认空世界）
+    # 启动 Gazebo Classic（so101.world：空地 + 太阳 + model_states/link_states 插件，
+    # 后者用于夹取时读取物体位姿。注意 gazebo.launch.py 不透传参数，
+    # 需直接 include gzserver/gzclient）
     # mesh 路径在 xacro 里用 $(find so101_moveit_gazebo) 展开为绝对路径，
     # 不再依赖 GAZEBO_MODEL_PATH 环境变量
-    gazebo_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([get_package_share_directory(
-                    'gazebo_ros'), '/launch/gazebo.launch.py']),
-        launch_arguments=[('verbose', 'true')]
+    gazebo_share = get_package_share_directory('gazebo_ros')
+    gzserver_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([gazebo_share, '/launch/gzserver.launch.py']),
+        launch_arguments=[('verbose', 'true'),
+                          ('world', os.path.join(
+                              pkg_share, 'worlds', 'so101.world'))]
+    )
+    gzclient_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([gazebo_share, '/launch/gzclient.launch.py'])
     )
 
     # 请求 Gazebo 加载机器人
@@ -53,6 +60,16 @@ def generate_launch_description():
         arguments=['-topic', '/robot_description',
                    '-entity', robot_name_in_model,
                    '-z', '0.02'],
+        output='screen'
+    )
+
+    # 测试方块（2cm 立方体，effort 夹爪抓取用），延时等 Gazebo 就绪
+    spawn_cube_node = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=['-file', os.path.join(pkg_share, 'objects', 'cube.urdf'),
+                   '-entity', 'cube',
+                   '-x', '0.303', '-y', '0.009', '-z', '0.21'],
         output='screen'
     )
 
@@ -86,13 +103,19 @@ def generate_launch_description():
     return LaunchDescription([
         model_arg,
         robot_state_publisher_node,
-        gazebo_launch,
+        gzserver_launch,
+        gzclient_launch,
         image_view_node,
         # spawn_entity 内部会自己等待 /spawn_entity 服务就绪，无需长延时；
         # 缩短 spawn 前的等待，减小"机器人在世界里但控制器未激活"的重力下垂窗口
         TimerAction(
             period=2.0,
             actions=[spawn_entity_node]
+        ),
+        # 方块在机器人之后生成（不与机械臂初始位姿干涉）
+        TimerAction(
+            period=6.0,
+            actions=[spawn_cube_node]
         ),
         # 事件动作，机器人生成结束后加载 joint_state_broadcaster
         RegisterEventHandler(

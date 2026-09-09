@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="test_cube">
+  <link name="cube_link">
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.02"/>
+      <inertia ixx="1.34e-6" iyy="1.34e-6" izz="1.34e-6" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry><box size="0.02 0.02 0.02"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry><box size="0.02 0.02 0.02"/></geometry>
+    </visual>
+  </link>
+  <gazebo reference="cube_link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+  </gazebo>
+</robot>

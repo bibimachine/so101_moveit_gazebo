@@ -13,7 +13,7 @@ find_package(ament_cmake REQUIRED)
 
 
 
-install(DIRECTORY launch urdf config
+install(DIRECTORY launch urdf config worlds objects
 DESTINATION share/${PROJECT_NAME})
 
 # 实用脚本（ros2 run so101_moveit_gazebo show_fps.py）

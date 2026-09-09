@@ -13,6 +13,7 @@
         </xacro:if>
       </hardware>
       <joint name="gripper">
+        <command_interface name="effort"/>
         <command_interface name="position"/>
         <state_interface name="position">
           <param name="initial_value">0.0</param>
