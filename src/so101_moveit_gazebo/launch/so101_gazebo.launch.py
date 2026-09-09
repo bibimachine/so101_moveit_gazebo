@@ -97,12 +97,12 @@ def generate_launch_description():
         output='screen'
     )
 
-    # 相机画面显示（固定外置相机 /so101_camera/image_raw）
-    # 需要 ros-humble-image-view：sudo apt install ros-humble-image-view
-    image_view_node = Node(
-        package='image_view',
-        executable='image_view',
-        remappings=[('image', '/so101_camera/image_raw')]
+    # RViz 显示（复用 display 的布局；use_sim_time 对齐 Gazebo 的 /clock）
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        arguments=['-d', os.path.join(pkg_share, 'config', 'so101_display.rviz')],
+        parameters=[{'use_sim_time': True}]
     )
 
     return LaunchDescription([
@@ -112,7 +112,7 @@ def generate_launch_description():
         robot_state_publisher_node,
         gzserver_launch,
         gzclient_launch,
-        image_view_node,
+        rviz_node,
         # spawn 延时 5s:WSLg 下 gzclient 连接服务器需要数秒,spawn 太早客户端
         # 没就绪会丢模型视觉(画面里隐形,见问题排查记录#1);太晚则拉长"控制器
         # 未激活"的重力下垂窗口。5s 两边都照顾到,且 grasp_cube.py 会先回标定位形
