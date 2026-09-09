@@ -14,6 +14,17 @@
   <!-- 机器人本体（公共描述） -->
   <xacro:so101_description/>
 
+  <!-- Gazebo Classic 材质：它忽略 URDF 的 <material><color>，只对整 link 应用
+       自己的命名材质。黄 = 打印结构件，黑 = 舵机/夹爪，与 RViz 里 3d_printed/sts3215 对应。 -->
+  <gazebo reference="base_link"><material>Gazebo/Yellow</material></gazebo>
+  <gazebo reference="shoulder_link"><material>Gazebo/Yellow</material></gazebo>
+  <gazebo reference="upper_arm_link"><material>Gazebo/Yellow</material></gazebo>
+  <gazebo reference="lower_arm_link"><material>Gazebo/Yellow</material></gazebo>
+  <gazebo reference="wrist_link"><material>Gazebo/Yellow</material></gazebo>
+  <gazebo reference="gripper_link"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="gripper_frame_link"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="moving_jaw_so101_v1_link"><material>Gazebo/Black</material></gazebo>
+
   <!-- Gazebo 专用：world 虚链接 + fixed 关节，把整机焊死在空中，
        防止底盘倾倒/滑动，同时消除 KDL 根链接带惯性的警告。 -->
   <link name="world"/>

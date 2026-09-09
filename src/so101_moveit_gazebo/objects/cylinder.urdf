@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<robot name="test_cylinder">
+  <link name="cylinder_link">
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.02"/>
+      <!-- 实心圆柱:ixx=iyy=m(3r²+h²)/12, izz=mr²/2 (r=0.015, h=0.06) -->
+      <inertia ixx="7.13e-6" iyy="7.13e-6" izz="2.25e-6" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry><cylinder radius="0.015" length="0.06"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry><cylinder radius="0.015" length="0.06"/></geometry>
+    </visual>
+  </link>
+  <gazebo reference="cylinder_link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+  </gazebo>
+</robot>

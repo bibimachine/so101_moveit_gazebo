@@ -68,12 +68,12 @@ def generate_launch_description():
         output='screen'
     )
 
-    # 测试方块（2cm 立方体，effort 夹爪抓取用），延时等 Gazebo 就绪
-    spawn_cube_node = Node(
+    # 测试圆柱(r=1.5cm h=6cm,竖立,effort 夹爪抓取用),延时等 Gazebo 就绪
+    spawn_cylinder_node = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-file', os.path.join(pkg_share, 'objects', 'cube.urdf'),
-                   '-entity', 'cube',
+        arguments=['-file', os.path.join(pkg_share, 'objects', 'cylinder.urdf'),
+                   '-entity', 'cylinder',
                    '-x', '0.303', '-y', '0.009', '-z', '0.21'],
         output='screen'
     )
@@ -115,7 +115,7 @@ def generate_launch_description():
         rviz_node,
         # spawn 延时 5s:WSLg 下 gzclient 连接服务器需要数秒,spawn 太早客户端
         # 没就绪会丢模型视觉(画面里隐形,见问题排查记录#1);太晚则拉长"控制器
-        # 未激活"的重力下垂窗口。5s 两边都照顾到,且 grasp_cube.py 会先回标定位形
+        # 未激活"的重力下垂窗口。5s 两边都照顾到,且抓取演示会先回标定位形
         TimerAction(
             period=5.0,
             actions=[spawn_entity_node]
@@ -123,7 +123,7 @@ def generate_launch_description():
         # 方块在机器人之后生成（不与机械臂初始位姿干涉）
         TimerAction(
             period=6.0,
-            actions=[spawn_cube_node]
+            actions=[spawn_cylinder_node]
         ),
         # 事件动作，机器人生成结束后加载 joint_state_broadcaster
         RegisterEventHandler(
