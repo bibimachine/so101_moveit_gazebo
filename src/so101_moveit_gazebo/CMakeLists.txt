@@ -18,6 +18,7 @@ DESTINATION share/${PROJECT_NAME})
 
 # 实用脚本（ros2 run so101_moveit_gazebo show_fps.py）
 install(PROGRAMS scripts/show_fps.py scripts/record_so101.sh scripts/grasp_cube.py
+  scripts/manual_control.py
   DESTINATION lib/${PROJECT_NAME})
 
 

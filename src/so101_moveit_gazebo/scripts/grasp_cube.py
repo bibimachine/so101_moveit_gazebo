@@ -26,7 +26,7 @@ import time
 
 import rclpy
 from ament_index_python.packages import get_package_share_directory
-from gazebo_msgs.msg import ModelStates
+from gazebo_msgs.msg import LinkStates, ModelStates
 from gazebo_msgs.srv import DeleteEntity, SpawnEntity
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
@@ -34,7 +34,6 @@ from std_msgs.msg import Float64MultiArray
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 ARM_JOINTS = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex', 'wrist_roll']
-SPAWN_POS = {'x': 0.303, 'y': 0.009, 'z': 0.21}
 # 方块 spawn 坐标对应的标定位形(spawn 前先把手臂回到这里)
 CALIB_POSE = {'shoulder_pan': 0.0, 'shoulder_lift': 0.077,
               'elbow_flex': 0.334, 'wrist_flex': -0.483, 'wrist_roll': 0.0}
@@ -51,8 +50,30 @@ class GraspDemo(Node):
             JointTrajectory, '/so101_arm_controller/joint_trajectory', 1)
         self._joint_state = None
         self._model_state = None
+        self._link_state = None
         self.create_subscription(JointState, '/joint_states', self._on_joint_state, 10)
         self.create_subscription(ModelStates, '/model_states', self._on_model_state, 10)
+        self.create_subscription(LinkStates, '/link_states', self._on_link_state, 10)
+
+    def _on_link_state(self, msg):
+        self._link_state = msg
+
+    def jaw_midpoint(self, timeout=5.0):
+        """读 gripper_link 与 moving_jaw 的世界坐标,返回中点(x, y, z)。
+
+        spawn 方块用这个中点而不是写死坐标——钳口张角/臂姿变化都会反映进去。
+        """
+        end = time.time() + timeout
+        while time.time() < end:
+            rclpy.spin_once(self, timeout_sec=0.1)
+            if not self._link_state:
+                continue
+            names = self._link_state.name
+            if 'so101::gripper_link' in names and 'so101::moving_jaw_so101_v1_link' in names:
+                p1 = self._link_state.pose[names.index('so101::gripper_link')].position
+                p2 = self._link_state.pose[names.index('so101::moving_jaw_so101_v1_link')].position
+                return ((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2)
+        return None
 
     def _on_joint_state(self, msg):
         self._joint_state = msg
@@ -110,20 +131,44 @@ class GraspDemo(Node):
         # 1) 回标定位形:方块 spawn 坐标按此位形标定;爪/contact 受力会让腕关节漂移,
         #    不在标定位形 spawn,方块可能砸在爪背甚至被挤出世界
         self.get_logger().info('手臂回到标定位形...')
-        self.send_effort(0.0)  # 夹爪保持,别在回位过程中猛张猛合
         self.send_trajectory([CALIB_POSE[j] for j in ARM_JOINTS], duration=4.0)
         if not self.wait_arm_reached(CALIB_POSE):
             self.get_logger().warn('回标定位形超时,仍继续(可能影响落点)')
         time.sleep(1.0)
+
+        # 1.5) 张开夹爪:spawn 坐标按"全张"(关节下限 -0.1745)标定,
+        #     钳口半闭时方块会落在爪背/被弹飞。回位期间 effort=0 爪会自由下落,
+        #     这里主动给负 effort 确保全张到位再 spawn
+        self.send_effort(-0.15)
+        time.sleep(1.5)
 
         # 2) 删除旧方块(没有就跳过)
         del_cli = self.create_client(DeleteEntity, '/delete_entity')
         if del_cli.wait_for_service(timeout_sec=3.0):
             rclpy.spin_until_future_complete(
                 self, del_cli.call_async(DeleteEntity.Request(name='cube')), timeout_sec=3.0)
-            self.get_logger().info('已删除旧方块')
+            self.get_logger().info('已请求删除旧方块')
+            # 等删除真正生效(同名 delete+spawn 背靠背会竞态:删除若延迟生效,
+            # 可能把刚 spawn 的新方块一起删掉),最多等 3s
+            deadline = time.time() + 3.0
+            while time.time() < deadline:
+                if self.cube_z(timeout=0.5) is None:
+                    break
+            else:
+                self.get_logger().warn('旧方块 3s 后仍在,继续(可能撞上同名冲突)')
 
-        # 3) spawn 新方块到钳口之间
+        # 3) spawn 新方块到钳口之间(带验证,失败重试一次)
+        # spawn 点:未显式指定时取两颚世界坐标中点上方 3cm,方块自由落进钳口 V 型槽,
+        # 不受钳口张角/臂姿漂移影响
+        if self.args.cube_x is None:
+            mid = self.jaw_midpoint()
+            if mid is None:
+                self.get_logger().error('读不到夹爪 link 位姿,/link_states 不可用?')
+                sys.exit(2)
+            spawn_pos = (mid[0], mid[1], mid[2] - 0.01)
+            self.get_logger().info(f'钳口中点 {tuple(round(v,3) for v in mid)},低于中点 1cm 放下方块(落进钳口 V 型槽)')
+        else:
+            spawn_pos = (self.args.cube_x, self.args.cube_y, self.args.cube_z)
         urdf_path = get_package_share_directory('so101_moveit_gazebo') + '/objects/cube.urdf'
         with open(urdf_path) as f:
             urdf = f.read()
@@ -131,18 +176,26 @@ class GraspDemo(Node):
         if not spawn_cli.wait_for_service(timeout_sec=5.0):
             self.get_logger().error('/spawn_entity 服务不可用')
             sys.exit(2)
-        req = SpawnEntity.Request()
-        req.name = 'cube'
-        req.xml = urdf
-        req.initial_pose.position.x = self.args.cube_x
-        req.initial_pose.position.y = self.args.cube_y
-        req.initial_pose.position.z = self.args.cube_z
-        fut = spawn_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, fut, timeout_sec=5.0)
-        if not fut.result() or not fut.result().success:
-            self.get_logger().error(f'spawn 方块失败:{fut.result().status_message if fut.result() else "服务无响应"}')
+        for attempt in (1, 2):
+            req = SpawnEntity.Request()
+            req.name = 'cube'
+            req.xml = urdf
+            req.initial_pose.position.x = spawn_pos[0]
+            req.initial_pose.position.y = spawn_pos[1]
+            req.initial_pose.position.z = spawn_pos[2]
+            fut = spawn_cli.call_async(req)
+            rclpy.spin_until_future_complete(self, fut, timeout_sec=5.0)
+            if not fut.result() or not fut.result().success:
+                self.get_logger().error(f'spawn 方块失败:{fut.result().status_message if fut.result() else "服务无响应"}')
+                sys.exit(2)
+            # 服务返回 success 不等于模型真的在了——等 /model_states 确认
+            if self.cube_z(timeout=3.0) is not None:
+                break
+            self.get_logger().warn(f'spawn 第 {attempt} 次后方块未出现,重试')
+        else:
+            self.get_logger().error('方块两次 spawn 均未在 /model_states 出现')
             sys.exit(2)
-        self.get_logger().info(f'方块已 spawn 到 ({self.args.cube_x}, {self.args.cube_y}, {self.args.cube_z})')
+        self.get_logger().info(f'方块已 spawn 到 {tuple(round(v,3) for v in spawn_pos)}')
         time.sleep(2.0)  # 等方块落到钳口之间稳定
 
     def lift(self):
@@ -169,9 +222,10 @@ def main():
     p.add_argument("--wrist-flex", type=float, default=-0.95, help='抬升目标腕角 (rad)')
     p.add_argument('--duration', type=float, default=3.0, help='抬升轨迹时长 (s)')
     p.add_argument('--close-time', type=float, default=2.0, help='闭合后等待夹稳 (s)')
-    p.add_argument('--cube-x', type=float, default=SPAWN_POS['x'])
-    p.add_argument('--cube-y', type=float, default=SPAWN_POS['y'])
-    p.add_argument('--cube-z', type=float, default=SPAWN_POS['z'])
+    p.add_argument('--cube-x', type=float, default=None,
+                   help='方块 spawn x(缺省取钳口中点自动计算)')
+    p.add_argument('--cube-y', type=float, default=None, help='方块 spawn y')
+    p.add_argument('--cube-z', type=float, default=None, help='方块 spawn z')
     args = p.parse_args()
 
     rclpy.init()
