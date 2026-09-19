@@ -58,5 +58,5 @@ ros2 launch so101_moveit_gazebo so101_moveit_servo.launch.py
 ## 文档
 
 - [src/so101_moveit_gazebo/doc/文件说明.md](src/so101_moveit_gazebo/doc/文件说明.md) — 各文件作用说明
-- [src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md](src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md) — Servo 2.5.9 接入踩坑（参数格式、JointJog stamp、双通道互斥、5DOF 奇异阈值标定、/clock 量化告警）
-- [src/so101_moveit_gazebo/doc/问题排查记录.md](src/so101_moveit_gazebo/doc/问题排查记录.md) — 全部踩坑记录(Gazebo 隐形、RViz mesh 加载、numpy 冲突等)
+- [src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md](src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md) — Servo 2.5.9 接入踩坑
+- [src/so101_moveit_gazebo/doc/问题排查记录.md](src/so101_moveit_gazebo/doc/问题排查记录.md) — 全部踩坑记录
