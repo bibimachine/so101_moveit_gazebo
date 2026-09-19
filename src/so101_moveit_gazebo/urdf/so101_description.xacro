@@ -344,6 +344,8 @@
       <child link="gripper_link"/>
       <axis xyz="0 0 1"/>
       <limit effort="10" velocity="10" lower="-2.74385" upper="2.84121"/>
+      <!-- 粘性阻尼：压传送窗口内的重力下坠速度，消除 Servo 静止时的可见抖动 -->
+      <dynamics damping="1.0"/>
     </joint>
 
     <!-- Joint from lower_arm to wrist -->
@@ -353,6 +355,7 @@
       <child link="wrist_link"/>
       <axis xyz="0 0 1"/>
       <limit effort="10" velocity="10" lower="-1.65806" upper="1.65806"/>
+      <dynamics damping="1.0"/>
     </joint>
 
     <!-- Joint from upper_arm to lower_arm -->
@@ -363,6 +366,7 @@
       <child link="lower_arm_link"/>
       <axis xyz="0 0 1"/>
       <limit effort="10" velocity="10" lower="-1.69" upper="1.69"/>
+      <dynamics damping="1.0"/>
     </joint>
 
     <!-- Joint from shoulder to upper_arm -->
@@ -372,6 +376,7 @@
       <child link="upper_arm_link"/>
       <axis xyz="0 0 1"/>
       <limit effort="10" velocity="10" lower="-1.74533" upper="1.74533"/>
+      <dynamics damping="1.0"/>
     </joint>
 
     <!-- Joint from base to shoulder -->
@@ -381,6 +386,7 @@
       <child link="shoulder_link"/>
       <axis xyz="0 0 1"/>
       <limit effort="10" velocity="10" lower="-1.91986" upper="1.91986"/>
+      <dynamics damping="1.0"/>
     </joint>
 
   </xacro:macro>

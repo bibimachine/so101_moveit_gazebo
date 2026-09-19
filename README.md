@@ -25,11 +25,12 @@ SO101 机械臂 + ROS 2 + Gazebo 的**学习实践项目**。从 URDF 建模起�
 - [x] 固定外置 RGB 相机(eye-to-hand):`/so101_camera/image_raw`
 - [x] 数据采集:`ros2 bag record` 封装脚本(mcap,话题含控制指令,对齐 LeRobot 数据集要素)
 - [x] RViz 显示与相机 FPS 查看工具
+- [x] 接入 MoveIt Servo：关节/笛卡尔双通道实时微动（TwistStamped/JointJog），碰撞/限位/奇异安全壳，输出接 Gazebo JTC（100Hz，5 自由度奇异阈值按实测标定；接入过程见 doc/moveit_servo_接入记录.md）
+- [x] 直接操控：手柄遥操（`xbox_control` 工作区 `joint_teleop` C++ 关节级 + `ee_teleop` Python 末端级，直发 Servo）+ `manual_control.py` 键盘控制台；示教数据可用 `record_so101.sh` 采集
 
 ## TODO
 
-- [ ] 接入 MoveIt 2(运动规划、碰撞检测)
-- [ ] 直接操控(遥操作示教,采集 demonstration 数据)
+- [ ] 接入 MoveIt 规划器（OMPL 全局规划、Planning Scene 批处理；Servo 已覆盖实时层）
 - [ ] (可选)腕部第二相机、深度相机
 
 ## 快速开始
@@ -49,9 +50,13 @@ ros2 run so101_moveit_gazebo manual_control.py
 
 # 数据采集(需先启动 gazebo launch)
 ros2 run so101_moveit_gazebo record_so101.sh -h
+
+# MoveIt Servo 实时微动(需先启动 gazebo launch;手柄遥操在 xbox_control 工作区)
+ros2 launch so101_moveit_gazebo so101_moveit_servo.launch.py
 ```
 
 ## 文档
 
 - [src/so101_moveit_gazebo/doc/文件说明.md](src/so101_moveit_gazebo/doc/文件说明.md) — 各文件作用说明
+- [src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md](src/so101_moveit_gazebo/doc/moveit_servo_接入记录.md) — Servo 2.5.9 接入踩坑（参数格式、JointJog stamp、双通道互斥、5DOF 奇异阈值标定、/clock 量化告警）
 - [src/so101_moveit_gazebo/doc/问题排查记录.md](src/so101_moveit_gazebo/doc/问题排查记录.md) — 全部踩坑记录(Gazebo 隐形、RViz mesh 加载、numpy 冲突等)
